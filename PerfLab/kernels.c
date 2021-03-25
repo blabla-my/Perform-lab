@@ -47,46 +47,22 @@ void naive_rotate(int dim, pixel *src, pixel *dst)
  * rotate - Your current working version of rotate
  * IMPORTANT: This is the version you will be graded on
  */
-char rotate_descr[] = "rotate: Current working version";
 
-#define COPY(d,s) *(d)=*(s)
-void rotate(int dim, pixel *src, pixel *dst) 
-{
-    int i, j, k;
-    int dst_base = (dim-1)*dim;
-    dst += dst_base;
-    for (i = 0; i < dim; i+=32){ 
-            for (j = 0; j < dim; j++){ 
-                for(k=0;k<31;k++){
-                    *dst=*src;
-                    src+=dim;
-                    dst+=1;
-                }
-                *dst=*src;
-                src++;
-                src -= (dim<<5)-dim;
-                dst-=31+dim;
-            }
-        dst+=dst_base+dim;
-        dst+=32;
-        src += 31*dim;
-    }
-}
+char rotate_descr[] = "rotate2: Using 2 pointer";
 
-char rotate2_descr[] = "rotate2: Using 2 pointer";
-
-void rotate2(int dim, pixel *src, pixel *dst){
-    #define move(dst,src) *dst=*src; \
-                    src+=dim; \
-                    dst+=1;  
+void rotate(int dim, pixel *src, pixel *dst){
+    #define move(dst,src) \
+            *dst=*src; \
+            src+=dim; \
+            dst+=1;  
     #define update1(dst,src) \
-                    src++;  \
-                    src -= (dim<<5);    \
-                    dst-=32+dim;   
+            src++;  \
+            src -= (dim<<5);    \
+            dst-=32+dim;   
     #define update2(dst,src) \
-                dst+=dst_base+dim; \
-                dst+=32; \
-                src += 31*dim;
+            dst+=dst_base+dim; \
+            dst+=32; \
+            src += 31*dim;
     int i, j;
     int dst_base = (dim-1)*dim;
     dst += dst_base;
@@ -134,96 +110,6 @@ void rotate2(int dim, pixel *src, pixel *dst){
         }
 }
 
-
-char new_rotate_descr[] = "new_rotate";
-void new_rotate(int dim,pixel *src,pixel *dst){
-    /*
-    for(int i=0;i<dim;i++){
-        for(int j=0;j<dim;j++){
-            dst[RIDX(i, j, dim)] = src[RIDX(j, dim-1-i, dim)];
-        }
-    }
-    */
-   int i,j,k;
-   for(j=0;j<dim;j+=32){
-       for(i=dim-1;i>=0;i--){
-           for(k=0;k<32;k++){
-               dst[RIDX(i,j+k,dim)] = src[RIDX(j+k,dim-1-i,dim)];
-           }
-       }
-   }
-}
-char rotate1_descr[] = "rotate1";
-void rotate1(int dim, pixel * src , pixel* dst){
-    int i,j,k;
-    int rowsize = 32;
-    if(dim == 1024) rowsize = 88;
-    if(dim == 64) rowsize = 32;
-    for(j=0;j < dim- dim % rowsize;j+=rowsize){
-        for(i=dim-1;i>=0;i--){
-            for(k=0;k<rowsize;k++){
-                dst[RIDX(i,j+k,dim)] = src[RIDX(j+k,dim-1-i,dim)];
-            }
-        }
-    }
-    for(i=dim-1;i>=0;i--){
-        for(;j<dim;j++){
-             dst[RIDX(i,j,dim)] = src[RIDX(j,dim-1-i,dim)];
-        }
-    }
-}
-
-char rotate_v7_descr[] = "rotate_v7";
-void rotate_v7(int dim, pixel *src, pixel *dst){
-    int i, j, s, t, a, b;
-    //a, b用于缓存
-    s = (dim - 1) * dim;
-    t = 0;
-    for (j = 0; j < dim; j++){
-        a = s;
-        b = t;
-        for (i = 0; i < dim; i++){
-            dst[s] = src[t];
-            s++;
-            t += dim;
-        }
-        s = a - dim;
-        t = b + 1;
-    }     
-}
-
-char desc[]="rotate_web";
-void rotate_web(int dim, pixel *src, pixel *dst)
-{
-    int i, j, a, b;
-    int sdim = dim - 1;
-    for (i = 0; i < dim; i += 8)
-    {
-        for (j = 0; j < dim; j += 8)
-        {
-            for (a = i; a < i + 8; a++)
-            {
-                for (b = j; b < j + 8; b++)
-                {
-                    dst[RIDX(sdim - b, a, dim)] = src[RIDX(a, b, dim)];
-                }
-            }
-        }
-    }
-}
-char szq_rotate_descr[] = "szq_rotate";
-void szq_rotate(int dim, pixel *src, pixel *dst)
-{
-    int row_size = 32;
-    for(int i=0;i < dim;i+=row_size){
-        for(int j=0;j<dim;j++){
-            for(int k=0;k<row_size;k++){
-                dst[RIDX(dim-1-j,i+k,dim)] = src[RIDX(i+k,j,dim)];
-            }
-        }
-        
-    }
-}
 /*********************************************************************
  * register_rotate_functions - Register all of your different versions
  *     of the rotate kernel with the driver by calling the
@@ -235,11 +121,7 @@ void szq_rotate(int dim, pixel *src, pixel *dst)
 void register_rotate_functions() 
 {
     add_rotate_function(&naive_rotate, naive_rotate_descr);   
-    //add_rotate_function(&rotate, rotate_descr);   
-    //add_rotate_function(&rotate_web,desc);
-    add_rotate_function(&new_rotate,new_rotate_descr);
-    add_rotate_function(&szq_rotate,szq_rotate_descr);
-    add_rotate_function(&rotate2,rotate2_descr);
+    add_rotate_function(&rotate,rotate_descr);
     //add_rotate_function(&rotate_v7,rotate_v7_descr);
     /* ... Register additional test functions here */
 }
@@ -357,6 +239,7 @@ char smooth_descr[] = "smooth: Current working version";
         (dest).red = (unsigned short)( ((r1).red+(r2).red+(r3).red )/(num) ); \
         (dest).green = (unsigned short)( ((r1).green+(r2).green+(r3).green )/(num) ); \
         (dest).blue = (unsigned short)( ((r1).blue+(r2).blue+(r3).blue )/(num) );
+
 void smooth(int dim, pixel *src, pixel *dst) 
 {
     pixel_sum tmp[512*512];
@@ -369,95 +252,158 @@ void smooth(int dim, pixel *src, pixel *dst)
         }
         add_two_pixel(tmp[RIDX(i,dim-1,dim)], src[RIDX(i,dim-2,dim)], src[RIDX(i,dim-1,dim)]);
     }
-    // calculate dst
-    // i=0
+
+// i=0
+    // j = 0
     smooth_two_rows(dst[RIDX(0,0,dim)],tmp[RIDX(0,0,dim)],tmp[RIDX(1,0,dim)],4);
+    // 1<j<=dim-2
     for(j=1;j<dim-1;j++){
         smooth_two_rows(dst[RIDX(0,j,dim)],tmp[RIDX(0,j,dim)],tmp[RIDX(1,j,dim)],6);
     }
+    // j=dim-1
     smooth_two_rows(dst[RIDX(0,dim-1,dim)],tmp[RIDX(0,dim-1,dim)],tmp[RIDX(1,dim-1,dim)],4);
-    // i = dim-1
+    
+// i = dim-1
+    // j = 0
     smooth_two_rows(dst[RIDX(dim-1,0,dim)],tmp[RIDX(dim-2,0,dim)],tmp[RIDX(dim-1,0,dim)],4);
+    // 1<j<=dim-2
     for(j=1;j<dim-1;j++){
         smooth_two_rows(dst[RIDX(dim-1,j,dim)],tmp[RIDX(dim-2,j,dim)],tmp[RIDX(dim-1,j,dim)],6);
     }
+    // j=dim-1
     smooth_two_rows(dst[RIDX(dim-1,dim-1,dim)],tmp[RIDX(dim-2,dim-1,dim)],tmp[RIDX(dim-1,dim-1,dim)],4);
-    // left
+    
+// 1 <= i <= dim-2
     for(i=1;i<dim-1;i++){
+        // j = 0
         smooth_three_rows(dst[RIDX(i,0,dim)],tmp[RIDX(i-1,0,dim)],tmp[RIDX(i,0,dim)],tmp[RIDX(i+1,0,dim)],6);
+        // 1<j<=dim-2
         for(j=1;j<dim-1;j++){
             smooth_three_rows(dst[RIDX(i,j,dim)],tmp[RIDX(i-1,j,dim)],tmp[RIDX(i,j,dim)],tmp[RIDX(i+1,j,dim)],9);
         }
+        // j=dim-1
         smooth_three_rows(dst[RIDX(i,dim-1,dim)],tmp[RIDX(i-1,dim-1,dim)],tmp[RIDX(i,dim-1,dim)],tmp[RIDX(i+1,dim-1,dim)],6);
     }
 }
-
-
-
-
-char szq_smooth_descr[] = "szq_smooth";
-void szq_smooth(int dim, pixel *src, pixel *dst){
-    pixel_sum temp[512][512];
-    for(int i=0;i<dim;i++){
-        temp[i][0].red=src[RIDX(i,0,dim)].red+src[RIDX(i,1,dim)].red;
-        temp[i][0].green=src[RIDX(i,0,dim)].green+src[RIDX(i,1,dim)].green;
-        temp[i][0].blue=src[RIDX(i,0,dim)].blue+src[RIDX(i,1,dim)].blue;
-        for(int j=1;j<dim-1;j++){
-            temp[i][j].red=src[RIDX(i,j-1,dim)].red+src[RIDX(i,j,dim)].red+src[RIDX(i,j+1,dim)].red;
-            temp[i][j].green=src[RIDX(i,j-1,dim)].green+src[RIDX(i,j,dim)].green+src[RIDX(i,j+1,dim)].green;
-            temp[i][j].blue=src[RIDX(i,j-1,dim)].blue+src[RIDX(i,j,dim)].blue+src[RIDX(i,j+1,dim)].blue;
+char smooth2_descr[] = "smooth2: Current working version";
+void smooth2(int dim, pixel *src, pixel *dst) 
+{
+    pixel_sum tmp[512*512];
+    // generate tmp
+    int  i,j,jj;
+    for(i=0;i<dim;i++){
+        add_two_pixel(tmp[RIDX(i,0,dim)], src[RIDX(i,0,dim)], src[RIDX(i,1,dim)]);
+        for(jj=1;jj<dim-1;jj++){
+            add_three_pixel(tmp[RIDX(i,jj,dim)], src[RIDX(i,jj-1,dim)],src[RIDX(i,jj,dim)], src[RIDX(i,jj+1,dim)]);
         }
-        temp[i][dim-1].red=src[RIDX(i,dim-2,dim)].red+src[RIDX(i,dim-1,dim)].red;
-        temp[i][dim-1].green=src[RIDX(i,dim-2,dim)].green+src[RIDX(i,dim-1,dim)].green;
-        temp[i][dim-1].blue=src[RIDX(i,dim-2,dim)].blue+src[RIDX(i,dim-1,dim)].blue;
+        add_two_pixel(tmp[RIDX(i,dim-1,dim)], src[RIDX(i,dim-2,dim)], src[RIDX(i,dim-1,dim)]);
     }
-    dst[0].red=(temp[0][0].red+temp[1][0].red)/4;
-    dst[0].green=(temp[0][0].green+temp[1][0].green)/4;
-    dst[0].blue=(temp[0][0].blue+temp[1][0].blue)/4;
-    for(int i=1;i<dim-1;i+=2){
-        dst[i].red=(temp[0][i].red+temp[1][i].red)/6;
-        dst[i].blue=(temp[0][i].blue+temp[1][i].blue)/6;
-        dst[i].green=(temp[0][i].green+temp[1][i].green)/6;
-        dst[i+1].red=(temp[0][i+1].red+temp[1][i+1].red)/6;
-        dst[i+1].blue=(temp[0][i+1].blue+temp[1][i+1].blue)/6;
-        dst[i+1].green=(temp[0][i+1].green+temp[1][i+1].green)/6;
+// i=0
+    // j = 0
+    smooth_two_rows(dst[RIDX(0,0,dim)],tmp[RIDX(0,0,dim)],tmp[RIDX(1,0,dim)],4);
+    // 1<j<=dim-2
+    for(j=1;j<dim-1;j+=2){
+        smooth_two_rows(dst[RIDX(0,j,dim)],tmp[RIDX(0,j,dim)],tmp[RIDX(1,j,dim)],6);
+        smooth_two_rows(dst[RIDX(0,j+1,dim)],tmp[RIDX(0,j+1,dim)],tmp[RIDX(1,j+1,dim)],6);
     }
-    dst[dim-1].red=(temp[0][dim-1].red+temp[1][dim-1].red)/4;
-    dst[dim-1].green=(temp[0][dim-1].green+temp[1][dim-1].green)/4;
-    dst[dim-1].blue=(temp[0][dim-1].blue+temp[1][dim-1].blue)/4;
-    for(int i=1;i<dim-1;i++){
-        dst[RIDX(i,0,dim)].red=(temp[i-1][0].red+temp[i][0].red+temp[i+1][0].red)/6;
-        dst[RIDX(i,0,dim)].blue=(temp[i-1][0].blue+temp[i][0].blue+temp[i+1][0].blue)/6;
-        dst[RIDX(i,0,dim)].green=(temp[i-1][0].green+temp[i][0].green+temp[i+1][0].green)/6;
-        for(int j=1;j<dim-1;j+=2){
-            dst[RIDX(i,j,dim)].red=(temp[i][j].red+temp[i-1][j].red+temp[i+1][j].red)/9;
-            dst[RIDX(i,j,dim)].blue=(temp[i][j].blue+temp[i-1][j].blue+temp[i+1][j].blue)/9;
-            dst[RIDX(i,j,dim)].green=(temp[i][j].green+temp[i-1][j].green+temp[i+1][j].green)/9;
-            dst[RIDX(i,j+1,dim)].red=(temp[i][j+1].red+temp[i-1][j+1].red+temp[i+1][j+1].red)/9;
-            dst[RIDX(i,j+1,dim)].blue=(temp[i][j+1].blue+temp[i-1][j+1].blue+temp[i+1][j+1].blue)/9;
-            dst[RIDX(i,j+1,dim)].green=(temp[i][j+1].green+temp[i-1][j+1].green+temp[i+1][j+1].green)/9;
+    // j=dim-1
+    smooth_two_rows(dst[RIDX(0,dim-1,dim)],tmp[RIDX(0,dim-1,dim)],tmp[RIDX(1,dim-1,dim)],4);
+    
+// i = dim-1
+    // j = 0
+    smooth_two_rows(dst[RIDX(dim-1,0,dim)],tmp[RIDX(dim-2,0,dim)],tmp[RIDX(dim-1,0,dim)],4);
+    // 1<j<=dim-2
+    for(j=1;j<dim-1;j+=2){
+        smooth_two_rows(dst[RIDX(dim-1,j,dim)],tmp[RIDX(dim-2,j,dim)],tmp[RIDX(dim-1,j,dim)],6);
+        smooth_two_rows(dst[RIDX(dim-1,j+1,dim)],tmp[RIDX(dim-2,j+1,dim)],tmp[RIDX(dim-1,j+1,dim)],6);
+    }
+    // j=dim-1
+    smooth_two_rows(dst[RIDX(dim-1,dim-1,dim)],tmp[RIDX(dim-2,dim-1,dim)],tmp[RIDX(dim-1,dim-1,dim)],4);
+    
+// 1 <= i <= dim-2
+    for(i=1;i<dim-1;i+=2){
+        // j = 0
+        smooth_three_rows(dst[RIDX(i,0,dim)],tmp[RIDX(i-1,0,dim)],tmp[RIDX(i,0,dim)],tmp[RIDX(i+1,0,dim)],6);
+        // 1<j<=dim-2
+        for(j=1;j<dim-1;j+=2){
+            smooth_three_rows(dst[RIDX(i,j,dim)],tmp[RIDX(i-1,j,dim)],tmp[RIDX(i,j,dim)],tmp[RIDX(i+1,j,dim)],9);
+            smooth_three_rows(dst[RIDX(i,j+1,dim)],tmp[RIDX(i-1,j+1,dim)],tmp[RIDX(i,j+1,dim)],tmp[RIDX(i+1,j+1,dim)],9);
         }
-        dst[RIDX(i,dim-1,dim)].red=(temp[i-1][dim-1].red+temp[i][dim-1].red+temp[i+1][dim-1].red)/6;
-        dst[RIDX(i,dim-1,dim)].blue=(temp[i-1][dim-1].blue+temp[i][dim-1].blue+temp[i+1][dim-1].blue)/6;
-        dst[RIDX(i,dim-1,dim)].green=(temp[i-1][dim-1].green+temp[i][dim-1].green+temp[i+1][dim-1].green)/6;
+        // j=dim-1
+        smooth_three_rows(dst[RIDX(i,dim-1,dim)],tmp[RIDX(i-1,dim-1,dim)],tmp[RIDX(i,dim-1,dim)],tmp[RIDX(i+1,dim-1,dim)],6);
+        // j = 0
+        smooth_three_rows(dst[RIDX(i+1,0,dim)],tmp[RIDX(i,0,dim)],tmp[RIDX(i+1,0,dim)],tmp[RIDX(i+2,0,dim)],6);
+        // 1<j<=dim-2
+        for(j=1;j<dim-1;j+=2){
+            smooth_three_rows(dst[RIDX(i+1,j,dim)],tmp[RIDX(i,j,dim)],tmp[RIDX(i+1,j,dim)],tmp[RIDX(i+2,j,dim)],9);
+            smooth_three_rows(dst[RIDX(i+1,j+1,dim)],tmp[RIDX(i,j+1,dim)],tmp[RIDX(i+1,j+1,dim)],tmp[RIDX(i+2,j+1,dim)],9);
+        }
+        // j=dim-1
+        smooth_three_rows(dst[RIDX(i+1,dim-1,dim)],tmp[RIDX(i,dim-1,dim)],tmp[RIDX(i+1,dim-1,dim)],tmp[RIDX(i+2,dim-1,dim)],6);
     }
-    dst[RIDX(dim-1,0,dim)].red=(temp[dim-2][0].red+temp[dim-1][0].red)/4;
-    dst[RIDX(dim-1,0,dim)].green=(temp[dim-2][0].green+temp[dim-1][0].green)/4;
-    dst[RIDX(dim-1,0,dim)].blue=(temp[dim-2][0].blue+temp[dim-1][0].blue)/4;
-    for(int i=1;i<dim-1;i+=2){
-        dst[RIDX(dim-1,i,dim)].red=(temp[dim-1][i].red+temp[dim-2][i].red)/6;
-        dst[RIDX(dim-1,i,dim)].blue=(temp[dim-1][i].blue+temp[dim-2][i].blue)/6;
-        dst[RIDX(dim-1,i,dim)].green=(temp[dim-1][i].green+temp[dim-2][i].green)/6;
-        dst[RIDX(dim-1,i+1,dim)].red=(temp[dim-1][i+1].red+temp[dim-2][i+1].red)/6;
-        dst[RIDX(dim-1,i+1,dim)].blue=(temp[dim-1][i+1].blue+temp[dim-2][i+1].blue)/6;
-        dst[RIDX(dim-1,i+1,dim)].green=(temp[dim-1][i+1].green+temp[dim-2][i+1].green)/6;
-    }
-    dst[RIDX(dim-1,dim-1,dim)].red=(temp[dim-2][dim-1].red+temp[dim-1][dim-1].red)/4;
-    dst[RIDX(dim-1,dim-1,dim)].green=(temp[dim-2][dim-1].green+temp[dim-1][dim-1].green)/4;
-    dst[RIDX(dim-1,dim-1,dim)].blue=(temp[dim-2][dim-1].blue+temp[dim-1][dim-1].blue)/4;
 }
 
-
+char smooth3_descr[] = "smooth3: Current working version";
+void smooth3(int dim, pixel *src, pixel *dst) 
+{
+    pixel_sum tmp[512*512];
+    // generate tmp
+    int  i,j,jj;
+    int idx,__idx;
+    for(i=0;i<dim;i++){
+        add_two_pixel(tmp[RIDX(i,0,dim)], src[RIDX(i,0,dim)], src[RIDX(i,1,dim)]);
+        for(jj=1;jj<dim-1;jj++){
+            add_three_pixel(tmp[RIDX(i,jj,dim)], src[RIDX(i,jj-1,dim)],src[RIDX(i,jj,dim)], src[RIDX(i,jj+1,dim)]);
+        }
+        add_two_pixel(tmp[RIDX(i,dim-1,dim)], src[RIDX(i,dim-2,dim)], src[RIDX(i,dim-1,dim)]);
+    }
+// i=0
+    // j = 0
+    smooth_two_rows(dst[RIDX(0,0,dim)],tmp[RIDX(0,0,dim)],tmp[RIDX(1,0,dim)],4);
+    // 1<j<=dim-2
+    for(j=1;j<dim-1;j+=2){
+        smooth_two_rows(dst[RIDX(0,j,dim)],tmp[RIDX(0,j,dim)],tmp[RIDX(1,j,dim)],6);
+        smooth_two_rows(dst[RIDX(0,j+1,dim)],tmp[RIDX(0,j+1,dim)],tmp[RIDX(1,j+1,dim)],6);
+    }
+    // j=dim-1
+    smooth_two_rows(dst[RIDX(0,dim-1,dim)],tmp[RIDX(0,dim-1,dim)],tmp[RIDX(1,dim-1,dim)],4);
+    
+// i = dim-1
+    // j = 0
+    smooth_two_rows(dst[RIDX(dim-1,0,dim)],tmp[RIDX(dim-2,0,dim)],tmp[RIDX(dim-1,0,dim)],4);
+    // 1<j<=dim-2
+    for(j=1;j<dim-1;j+=2){
+        smooth_two_rows(dst[RIDX(dim-1,j,dim)],tmp[RIDX(dim-2,j,dim)],tmp[RIDX(dim-1,j,dim)],6);
+        smooth_two_rows(dst[RIDX(dim-1,j+1,dim)],tmp[RIDX(dim-2,j+1,dim)],tmp[RIDX(dim-1,j+1,dim)],6);
+    }
+    // j=dim-1
+    smooth_two_rows(dst[RIDX(dim-1,dim-1,dim)],tmp[RIDX(dim-2,dim-1,dim)],tmp[RIDX(dim-1,dim-1,dim)],4);
+    
+// 1 <= i <= dim-2
+    for(i=1;i<dim-1;i+=2){
+        idx = RIDX(i,0,dim);
+        // j = 0
+        smooth_three_rows(dst[idx],tmp[idx-dim],tmp[idx],tmp[idx+dim],6);
+        // 1<j<=dim-2
+        __idx = RIDX(i,dim-1,dim);
+        for(j=1;j<dim-1;j+=2){
+            smooth_three_rows(dst[idx+j],tmp[idx+j-dim],tmp[idx+j],tmp[idx+j+dim],9);
+            smooth_three_rows(dst[idx+j+1],tmp[idx+j+1-dim],tmp[idx+j+1],tmp[idx+j+1+dim],9);
+        }
+        // j=dim-1
+        smooth_three_rows(dst[__idx],tmp[__idx-dim],tmp[__idx],tmp[__idx+dim],6);
+        
+        // j = 0
+        smooth_three_rows(dst[idx+dim],tmp[idx],tmp[idx+dim],tmp[idx+dim*2],6);
+        // 1<j<=dim-2
+        for(j=1;j<dim-1;j+=2){
+            smooth_three_rows(dst[idx+j+dim],tmp[idx+j],tmp[idx+j+dim],tmp[idx+j+dim*2],9);
+            smooth_three_rows(dst[idx+j+1+dim],tmp[idx+j+1],tmp[idx+j+dim+1],tmp[idx+j+1+dim*2],9);
+        }
+        // j=dim-1
+        smooth_three_rows(dst[__idx+dim],tmp[__idx],tmp[__idx+dim],tmp[__idx+dim*2],6);
+    }
+}
 /********************************************************************* 
  * register_smooth_functions - Register all of your different versions
  *     of the smooth kernel with the driver by calling the
@@ -468,8 +414,10 @@ void szq_smooth(int dim, pixel *src, pixel *dst){
 
 void register_smooth_functions() {
     add_smooth_function(&smooth, smooth_descr);
+    add_smooth_function(&smooth2,smooth2_descr);
+    add_smooth_function(&smooth3,smooth3_descr);
     add_smooth_function(&naive_smooth, naive_smooth_descr);
-    add_smooth_function(&szq_smooth,szq_smooth_descr);
+    
     /* ... Register additional test functions here */
 }
 
